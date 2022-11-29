@@ -1,11 +1,14 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
+import useSwr from 'swr'
 import { v4 as uuid } from 'uuid'
 import { Message } from '../typings'
+import fetcher from '../utils/fetchMessages'
 
 function ChatInput() {
   const [input, setInput] = useState('')
+  const { data, error, mutate } = useSwr('/api/getMessages', fetcher)
 
   const addMessage = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -40,7 +43,10 @@ function ChatInput() {
       })
 
       const data = await res.json()
+      console.log(data)
     }
+
+    uploadMessageToUpstash()
   }
 
   return (
