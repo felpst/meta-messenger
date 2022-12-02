@@ -8,9 +8,9 @@ import fetcher from '../utils/fetchMessages'
 
 function ChatInput() {
   const [input, setInput] = useState('')
-  const { data, error, mutate } = useSwr('/api/getMessages', fetcher)
+  const { data: messages, error, mutate } = useSwr('/api/getMessages', fetcher)
 
-  const addMessage = (e: FormEvent<HTMLFormElement>) => {
+  const addMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!input) return
@@ -32,7 +32,7 @@ function ChatInput() {
     }
 
     const uploadMessageToUpstash = async () => {
-      const res = await fetch('/api/addMessage', {
+      const data = await fetch('/api/addMessage', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,13 +40,15 @@ function ChatInput() {
         body: JSON.stringify({
           message,
         }),
-      })
+      }).then((res) => res.json())
 
-      const data = await res.json()
-      console.log(data)
+      return [data.message, ...messages!]
     }
 
-    uploadMessageToUpstash()
+    await mutate(uploadMessageToUpstash, {
+      optimisticData: [message, ...messages!],
+      rollbackOnError: true,
+    })
   }
 
   return (
