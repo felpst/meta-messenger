@@ -1,12 +1,17 @@
 'use client'
 
+import { unstable_getServerSession } from 'next-auth/next'
 import { FormEvent, useState } from 'react'
 import useSwr from 'swr'
 import { v4 as uuid } from 'uuid'
 import { Message } from '../typings'
 import fetcher from '../utils/fetchMessages'
 
-function ChatInput() {
+type Props = {
+  session: Awaited<ReturnType<typeof unstable_getServerSession>>
+}
+
+function ChatInput({ session }: Props) {
   const [input, setInput] = useState('')
   const { data: messages, error, mutate } = useSwr('/api/getMessages', fetcher)
 
@@ -25,10 +30,12 @@ function ChatInput() {
       id,
       message: messageToSend,
       created_at: Date.now(),
-      username: 'Sonny Sangha',
-      profilePicture:
-        'https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=10165787690655179&height=50&width=50&ext=1670750603&hash=AeQwQHgpc7_UkhQLsdY',
-      email: 'papareact.team@gmail.com',
+      // @ts-ignore
+      username: session?.user?.name!,
+      // @ts-ignore
+      profilePicture: session?.user?.image!,
+      // @ts-ignore
+      email: session?.user?.email!,
     }
 
     const uploadMessageToUpstash = async () => {
@@ -59,6 +66,7 @@ function ChatInput() {
       <input
         type='text'
         value={input}
+        disabled={!session}
         onChange={(e) => setInput(e.target.value)}
         placeholder='Enter message here...'
         className='
